@@ -6,14 +6,14 @@ on:
       profile:
         description: 'Target PROFILE'
         required: false
-        default: 'linksys_wrt1900ac-v2'
+        default: 'linksys_wrt3200acm'
       download_url:
         description: 'Image Builder tar.zst URL'
         required: false
         default: 'https://downloads.immortalwrt.org/releases/24.10.6/targets/mvebu/cortexa9/immortalwrt-imagebuilder-24.10.6-mvebu-cortexa9.Linux-x86_64.tar.zst'
 
 env:
-  PROFILE: ${{ github.event.inputs.profile || 'linksys_wrt1900ac-v2' }}
+  PROFILE: ${{ github.event.inputs.profile || 'linksys_wrt3200acm' }}
   DOWNLOAD_URL: ${{ github.event.inputs.download_url || 'https://downloads.immortalwrt.org/releases/24.10.6/targets/mvebu/cortexa9/immortalwrt-imagebuilder-24.10.6-mvebu-cortexa9.Linux-x86_64.tar.zst' }}
   PACKAGES_LIST_FILE: packages.list
   UCI_CUSTOM_FILE: uci-custom
