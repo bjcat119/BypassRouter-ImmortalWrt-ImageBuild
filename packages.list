@@ -58,6 +58,7 @@ sing-box
 # === WiFi 驱动（WRT3200ACM） ===
 kmod-mwlwifi
 mwlwifi-firmware-88w8964
+iwinfo
 
 # === 系统工具 ===
 autocore
