@@ -6,7 +6,9 @@
 [![Target](https://img.shields.io/badge/target-mvebu%2Fcortexa9-blue)](https://downloads.immortalwrt.org/releases/24.10.6/targets/mvebu/cortexa9/)
 [![PROFILE](https://img.shields.io/badge/profile-linksys_wrt3200acm-orange)](https://openwrt.org/toh/linksys/wrt3200acm)
 
-使用 GitHub Actions + ImmortalWrt Image Builder 自动构建 **Linksys WRT1900AC v2** 专用固件。
+基于 GitHub Actions + ImmortalWrt Image Builder​ 自动构建 Linksys WRT3200ACM（Rango）​ 旁路由固件（ImmortalWrt 24.10.6 / mvebu/cortexa9）。
+
+刷上即处于旁路由（透明网关）状态：LAN 静态 192.168.1.2、关 DHCP、关无线、防火墙 LAN→ACCEPT + WAN MASQUERADE；Luci 已装 Homeproxy + sing-box TUN，贴节点即可让全屋设备访问 Gemini / Claude / Copilot。
 
 ---
 
@@ -14,13 +16,13 @@
 
 | 项目 | 详情 |
 |------|------|
-| 设备 | Linksys WRT1900AC v2 |
+| 设备 | 	Linksys WRT3200ACM （Rango） |
 | SoC | Marvell Armada 385 88F6820 (Cortex-A9) |
-| 无线 | 88W8864 — 2.4G + 5G（mwlwifi） |
-| Flash | 128MB |
-| RAM | 256MB DDR3 |
+| 无线 | Marvell 88W8964（mwlwifi），旁路由场景默认关闭 |
+| Flash | 256MB NAND |
+| RAM | 512MB DDR3 |
 | 架构 | `mvebu/cortexa9` |
-| PROFILE | `linksys_wrt1900ac-v2` |
+| PROFILE | `linksys_wrt3200acm` |
 
 ---
 
