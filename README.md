@@ -12,7 +12,7 @@
 
 <p align="center">
   <b>基于 GitHub Actions + ImmortalWrt Image Builder 自动构建 Linksys WRT3200ACM（Rango）旁路由固件</b><br>
-  <span>刷上即处于<b>旁路由（透明网关）</b>状态：LAN 静态 <code>192.168.1.2</code>、关 DHCP、关无线、防火墙 LAN→ACCEPT + WAN MASQUERADE；Luci 已预装 <b>Homeproxy + sing-box TUN</b>，贴节点即可让全屋设备访问 Gemini / Claude / Copilot。</span>
+  <span>刷上即处于<b>旁路由（透明网关）</b>状态：LAN 静态 <code>192.168.1.2</code>、关 DHCP、关无线、防火墙 LAN→ACCEPT + WAN MASQUERADE；Luci 已预装 <b>Homeproxy + sing-box TUN</b>，贴节点即可让全屋设备访问 ChatGPT / Gemini / Claude / Copilot。</span>
 </p>
 
 ---
@@ -39,7 +39,6 @@
 | **Flash / RAM** | 256MB NAND / 512MB DDR3 |
 | **Image Builder PROFILE** | `linksys_wrt3200acm` |
 
-> 💡 WRT3200ACM 在 ImmortalWrt / OpenWrt 24.10 的 IB 里 PROFILE 为 `linksys_wrt3200acm`（旧式下划线），设备树 alt 名 `linksys,rango` / `armada-385-linksys-rango`。
 
 ---
 
@@ -78,7 +77,6 @@ BypassRouter-ImmortalWrt-ImageBuild/
 | `kmod-tun` | TUN 字符设备 |
 | `kmod-nft-tproxy` | TPROXY / 重定向依赖 |
 
-> ℹ️ **关于 `homeproxy` 独立引擎包**：ImmortalWrt 24.10.6 mvebu 官方源**不存在**独立的 `homeproxy` 引擎 ipk，HP 在 24.10 上以 `luci-app-homeproxy` 为前端、依赖 `sing-box` 作引擎，因此 `packages.list` 中**不写** `homeproxy` 那一行。
 
 ### 管理与主题
 
@@ -95,18 +93,11 @@ BypassRouter-ImmortalWrt-ImageBuild/
 
 | 包 | 说明 |
 |---|---|
-| `block-mount` + `blockd` | 分区挂载 + 热插拔自动挂载（替代 automount） |
+| `automount` | 分区热插拔自动挂载 |
 | `kmod-usb3` / `kmod-usb-storage` / `kmod-usb-storage-uas` | USB 3.0 存储驱动 |
-| `kmod-fs-ext4` / `kmod-fs-vfat` / `kmod-fs-ntfs` / `kmod-fs-exfat` | 全格式文件系统（NTFS 用内核 `kmod-fs-ntfs`） |
+| `kmod-fs-ext4` / `kmod-fs-vfat` / `kmod-fs-ntfs` / `kmod-fs-exfat` | 全格式文件系统 |
 | `e2fsprogs` | ext 分区工具 |
 
-### 无线驱动
-
-| 包 | 说明 |
-|---|---|
-| `kmod-mwlwifi` | mwlwifi 驱动（Marvell 88W8964） |
-| `mwlwifi-firmware-88w8964` | 对应固件 |
-| `iwinfo` | 无线信息工具 |
 
 ---
 
