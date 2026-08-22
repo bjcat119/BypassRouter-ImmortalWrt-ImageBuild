@@ -2,7 +2,6 @@ name: Build homeproxy engine ipk (mvebu/armv7)
 
 on:
   workflow_dispatch:
-  # 也可手动触发：Actions → 此工作流 → Run workflow
   push:
     paths:
       - '.github/workflows/build-homeproxy-ipk.yml'
@@ -12,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:24.04
+
     steps:
       - name: Install build deps
         run: |
@@ -24,18 +24,28 @@ jobs:
             zstd bc cpio kmod
           echo "FORCE_UNSAFE_CONFIGURE=1" >> $GITHUB_ENV
 
-      - name: Download ImmortalWrt 24.10.6 mvebu/cortexa9 SDK
+      - name: Download ImmortalWrt 24.10.6 mvebu/cortexa9 SDK (fault-tolerant)
         run: |
           cd /root
-          wget -c https://downloads.immortalwrt.org/releases/24.10.6/targets/mvebu/cortexa9/immortalwrt-sdk-24.10.6-mvebu-cortexa9_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
-          tar -I zstd -xvf *.tar.zst
-          SDK=$(ls -d immortalwrt-sdk-*)
-          mv $SDK sdk
+          URL="https://downloads.immortalwrt.org/releases/24.10.6/targets/mvebu/cortexa9/immortalwrt-sdk-24.10.6-mvebu-cortexa9_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst"
+          wget -c "$URL" -O sdk.tar.zst
+          file sdk.tar.zst
+          # 解到临时目录，避免通配 mv 踩空
+          rm -rf sdk_src sdk
+          mkdir -p sdk_src
+          tar -I zstd -xvf sdk.tar.zst -C sdk_src
+          TOP=$(tar -tf sdk.tar.zst | head -1 | cut -d/ -f1)
+          echo "SDK top dir: $TOP"
+          test -d "sdk_src/$TOP" || { echo "!! SDK dir not found"; exit 1; }
+          mv "sdk_src/$TOP" sdk
+          rm -rf sdk_src sdk.tar.zst
+          ls -d /root/sdk
           echo "SDK=/root/sdk" >> $GITHUB_ENV
 
       - name: Clone homeproxy (openwrt-24.10 branch)
         run: |
           cd ${{ env.SDK }}/package
+          rm -rf homeproxy
           git clone --depth 1 -b openwrt-24.10 https://github.com/immortalwrt/homeproxy.git homeproxy
 
       - name: Feeds update + install
@@ -51,10 +61,9 @@ jobs:
           for p in homeproxy luci-app-homeproxy luci-i18n-homeproxy-zh-cn; do
             sed -i "s/# CONFIG_PACKAGE_${p} is not set/CONFIG_PACKAGE_${p}=y/" .config
           done
-          # 依赖：sing-box 由官方源提供，这里不选，仅确保 HP 能被选中
-          grep -E 'homeproxy|luci-app-homeproxy' .config || true
+          grep -E 'CONFIG_PACKAGE_(homeproxy|luci-app-homeproxy)=y' .config
 
-      - name: Compile homeproxy
+      - name: Compile homeproxy + luci
         run: |
           cd ${{ env.SDK }}
           make package/homeproxy/compile V=s -j$(nproc)
@@ -70,6 +79,7 @@ jobs:
             -name 'luci-i18n-homeproxy-zh-cn_*.ipk' \
             \) -exec cp {} /root/out/ \;
           ls -lh /root/out/
+          test "$(ls -1 /root/out/*.ipk 2>/dev/null | wc -l)" -ge 1 || { echo "!! no ipk produced"; exit 1; }
           echo "OUT=/root/out" >> $GITHUB_ENV
 
       - name: Upload ipks as artifact
