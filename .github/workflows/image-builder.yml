@@ -1,4 +1,4 @@
-name: ImmortalWrt Image Builder
+name: BypassRouter ImmortalWrt Image Builder
 
 on:
   workflow_dispatch:
