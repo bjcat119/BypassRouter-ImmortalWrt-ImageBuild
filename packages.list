@@ -11,8 +11,6 @@ luci-app-advanced-reboot
 luci-i18n-advanced-reboot-zh-cn
 luci-app-autoreboot
 luci-i18n-autoreboot-zh-cn
-luci-app-partexp
-luci-i18n-partexp-zh-cn
 
 # === Homeproxy TUN（关键）===
 luci-app-homeproxy
