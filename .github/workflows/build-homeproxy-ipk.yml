@@ -24,7 +24,7 @@ jobs:
             zstd bc cpio kmod
           echo "FORCE_UNSAFE_CONFIGURE=1" >> $GITHUB_ENV
 
-      - name: Download ImmortalWrt 24.10.6 mvebu/cortexa9 SDK (fault-tolerant)
+      - name: Download ImmortalWrt 24.10.6 mvebu/cortexa9 SDK
         run: |
           cd /root
           URL="https://downloads.immortalwrt.org/releases/24.10.6/targets/mvebu/cortexa9/immortalwrt-sdk-24.10.6-mvebu-cortexa9_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst"
@@ -46,6 +46,7 @@ jobs:
           cd ${{ env.SDK }}/package
           rm -rf homeproxy
           git clone --depth 1 https://github.com/immortalwrt/homeproxy.git homeproxy
+          test -f homeproxy/Makefile || { echo "!! homeproxy clone failed"; exit 1; }
 
       - name: Feeds update + install
         run: |
@@ -60,7 +61,11 @@ jobs:
           for p in homeproxy luci-app-homeproxy luci-i18n-homeproxy-zh-cn; do
             sed -i "s/# CONFIG_PACKAGE_${p} is not set/CONFIG_PACKAGE_${p}=y/" .config
           done
-          grep -E 'CONFIG_PACKAGE_(homeproxy|luci-app-homeproxy)=y' .config
+          # 二次 defconfig 让依赖链生效
+          make defconfig
+          echo "=== Final selection check ==="
+          grep 'CONFIG_PACKAGE_homeproxy=' .config || true
+          grep 'CONFIG_PACKAGE_luci-app-homeproxy=' .config || true
 
       - name: Compile homeproxy + luci
         run: |
