@@ -66,3 +66,4 @@ bash
 curl
 wget
 ca-bundle
+ca-certificates
