@@ -85,6 +85,7 @@ BypassRouter-ImmortalWrt-ImageBuild/
 | `luci-light` + 中文翻译 | 精简 LuCI 核心 |
 | `luci-theme-argon` | Argon 主题 |
 | `luci-app-package-manager` | 网页包管理器 |
+| `luci-app-partexp` | 一键分区扩容 |
 | `luci-app-advanced-reboot` | 双分区切换 / 刷 factory（救砖神器） |
 | `luci-app-autoreboot` | 定时重启 |
 | `autocore` | CPU 频率 / 温度状态 |
@@ -160,22 +161,11 @@ BypassRouter-ImmortalWrt-ImageBuild/
 1. **节点设置**：粘贴订阅链接，或手动添加 VLESS / Trojan / Hysteria2 节点并选择 Main Node。
 2. **客户端设置**：
    - 代理模式 = **TUN**（TCP + UDP 全进 `singtun0`）
-   - 路由模式：先选 `global` 测通，再换 `bypass_mainland_china`
+   - 路由模式：先选 `全局` 测通，再换 `大陆白名单`
    - DNS 服务器：`8.8.8.8`（国际），中国 DNS 留 `223.5.5.5`
 3. **启用** Homeproxy → 状态页显示 **RUNNING**、节点延迟正常。
-4. **验证**：浏览器打开 `gemini.google.com` / `claude.ai` / `github.com/copilot`。
 
 > 🔥 **防火墙无需手动配置**：Homeproxy 会自动写入 fw4 include，`singtun0` 由 sing-box 自建，旁路由 MASQUERADE 已在 `uci-custom` 中固化。Luci → 状态 → 防火墙 看到 `singbox` / `homeproxy` 相关 nft chain 即表示注入生效。
-
----
-
-## ⚠️ 注意事项
-
-- 📡 **无线驱动**：mwlwifi 在 88W8964 上 5G 部分客户端存在兼容性波动，旁路由关无线不影响使用。
-- 💪 **性能预期**：WRT3200ACM 为 ARMv7 软路由，sing-box TUN 跑 Gemini / Claude / Copilot 文字流量绰绰有余；**不建议叠加满速 4K 全局代理**。
-- 💽 **NTFS 读写**：使用内核 `kmod-fs-ntfs`（ntfs3 驱动），无需 ntfs-3g；个别老 UAS 硬盘盒不兼容时，在启动参数加 `usb-storage.quirks=xxxx:yyyy:u`。
-- 🌍 **节点地区**：Claude 对部分地区 IP 会提示 “App unavailable in your region”，建议选美西 / 日本 / 新加坡等干净机房节点，避免香港节点跑 Claude。
-- 🔄 **双分区救砖**：刷坏无需紧张，电源键 3 秒切分区即可恢复。
 
 ---
 
