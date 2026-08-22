@@ -1,132 +1,180 @@
-[🇨🇳 中文版](README.md) | [🇺🇸 English Version](README_EN.md)
-# ImmortalWrt 24.10.6 for Linksys WRT1900AC v2
+[中文版](README.md) | [English Version](README_EN.md)
 
-[![ImmortalWrt](https://img.shields.io/badge/ImmortalWrt-24.10.6-brightgreen)](https://immortalwrt.org/)
-[![Target](https://img.shields.io/badge/target-mvebu%2Fcortexa9-blue)](https://downloads.immortalwrt.org/releases/24.10.6/targets/mvebu/cortexa9/)
-[![PROFILE](https://img.shields.io/badge/profile-linksys_wrt1900ac--v2-orange)](https://openwrt.org/toh/linksys/wrt1900ac_v2)
 
-Automated firmware builder for **Linksys WRT1900AC v2** using GitHub Actions + ImmortalWrt Image Builder, based on [noviachen/Image-Builder](https://github.com/noviachen/Image-Builder).
+🚀 **BypassRouter-ImmortalWrt-ImageBuild**
+
+Auto-build **Linksys WRT3200ACM (Rango)** bypass-router firmware via **GitHub Actions + ImmortalWrt Image Builder** (ImmortalWrt 24.10.6 / mvebu/cortexa9).
+
+Flashed as-is, the device boots into a **bypass gateway (transparent proxy)** state: static LAN `192.168.1.2`, DHCP off, Wi-Fi off, firewall LAN→ACCEPT + WAN MASQUERADE. Luci ships **Homeproxy + sing-box TUN**; paste your nodes and the whole LAN gets ChatGPT / Gemini / Claude / Copilot access with zero client-side proxy apps.
 
 ---
 
-## Hardware
+## ✨ Features
 
-| Item | Details |
-|------|---------|
-| Device | Linksys WRT1900AC v2 |
+🔌 **Ready-to-use bypass gateway** – `uci-custom` first-boot script auto-hardcodes LAN IP, disables DHCP/radios, sets firewall rules; no post-flash manual tuning.
+
+🌐 **Homeproxy + sing-box TUN** – Luci visual config, TCP/UDP fully captured, Gemini / Claude / Copilot transparently proxied.
+
+🛡️ **Dual-partition brick recovery** – `luci-app-advanced-reboot` preinstalled; WRT3200ACM dual UBI partitions, one-key switch on bad flash.
+
+💽 **USB storage, all filesystems** – ext4/vfat/ntfs/exfat, plug-and-play U disk.
+
+🎨 **Argon theme + Chinese i18n** – `luci-theme-argon` + full `luci-i18n-*-zh-cn`, friendly web UI.
+
+⚙️ **GitHub Actions auto-build** – after Fork / Use this template, one click yields `sysupgrade.bin` + `factory.img`.
+
+---
+
+## 📟 Hardware & Target
+
+| Item | Detail |
+|---|---|
+| Device | Linksys WRT3200ACM v1 (Rango) |
 | SoC | Marvell Armada 385 88F6820 (Cortex-A9) |
-| Wireless | 88W8864 — 2.4G + 5G (mwlwifi) |
-| Flash | 128MB |
-| RAM | 256MB DDR3 |
-| Architecture | `mvebu/cortexa9` |
-| PROFILE | `linksys_wrt1900ac-v2` |
+| Arch | mvebu/cortexa9, pkg arch `arm_cortex-a9_vfpv3-d16` |
+| Wi-Fi | Marvell 88W8964 (mwlwifi), disabled by default in bypass mode |
+| Flash / RAM | 256MB NAND / 512MB DDR3 |
+| Image Builder PROFILE | `linksys_wrt3200acm` |
 
 ---
 
-## Preinstalled Packages
+## 📁 Repo Layout
 
-### Network (replacing defaults)
-| Package | Notes |
-|---------|-------|
-| `dnsmasq-full` | Replaces dnsmasq — DNSSEC, Nftables support |
-| `wpad-openssl` | Replaces wpad-basic — WPA3 / 802.11r |
-| `ip-full` | Full iproute2 suite |
+BypassRouter-ImmortalWrt-ImageBuild/
 
-### LuCI & Theme
-| Package | Notes |
-|---------|-------|
-| `luci-light` + zh-cn translations | Lightweight LuCI core |
+├── .github/workflows/image-builder.yml   # Image Builder pipeline
+
+├── packages.list                         # package manifest (Homeproxy / sing-box / kmod-tun …)
+
+├── uci-custom                           # first-boot script → /etc/uci-defaults/99-custom
+
+├── packages/                            # optional extra .ipk (must be arm_cortex-a9_vfpv3-d16)
+
+├── README.md                            # Chinese README
+
+└── README_EN.md                         # This file
+
+---
+
+## 📦 Preinstalled Packages
+
+### Network core (replace defaults)
+
+| Package | Note |
+|---|---|
+| `dnsmasq-full` | replaces default dnsmasq, DNSSEC / nftables support |
+| `wpad-openssl` | replaces wpad-basic, WPA3 / 802.11r |
+| `ip-full` | full iproute2 toolset |
+| `firewall4` | fw4 / nftables firewall |
+
+### Bypass proxy (Homeproxy TUN)
+
+| Package | Note |
+|---|---|
+| `luci-app-homeproxy` | Homeproxy Luci frontend (config generation) |
+| `luci-i18n-homeproxy-zh-cn` | Homeproxy Chinese translation |
+| `sing-box` | proxy engine (TUN device created by sing-box) |
+| `kmod-tun` | TUN char device |
+| `kmod-nft-tproxy` | TPROXY / redirect dependency |
+
+### Management & theme
+
+| Package | Note |
+|---|---|
+| `luci-light` + i18n | slim LuCI core |
 | `luci-theme-argon` | Argon theme |
-| `luci-app-package-manager` | Web-based package manager |
-
-### System Management
-| Package | Notes |
-|---------|-------|
-| `luci-app-advanced-reboot` | Dual-partition switch / factory flash |
-| `luci-app-autoreboot` | Scheduled reboot |
-| `luci-app-partexp` | Web-based rootfs expansion |
-| `luci-app-upnp` | UPnP / NAT-PMP |
+| `luci-app-package-manager` | web package manager |
+| `luci-app-partexp` | one-click partition expand |
+| `luci-app-advanced-reboot` | dual-partition switch / factory flash (brick rescue) |
+| `luci-app-autoreboot` | scheduled reboot |
 | `autocore` | CPU freq / temp status |
-| `bash` `curl` `wget` `ca-certificates` `ca-bundle` | Essentials |
 
 ### Storage & USB
-| Package | Notes |
-|---------|-------|
-| `automount` + `block-mount` | Auto-mount USB drives |
-| `kmod-usb3` `kmod-usb-storage` `kmod-usb-storage-uas` | USB 3.0 storage drivers |
-| `kmod-fs-ext4` `kmod-fs-vfat` `kmod-fs-ntfs3` `kmod-fs-exfat` | Full filesystem support |
+
+| Package | Note |
+|---|---|
+| `automount` | hotplug auto-mount *(⚠️ 24.10.6 mvebu IB has no `automount` ipk; if build fails, remove this line and use `block-mount`+`blockd`)* |
+| `kmod-usb3` / `kmod-usb-storage` / `kmod-usb-storage-uas` | USB 3.0 storage driver |
+| `kmod-fs-ext4` / `kmod-fs-vfat` / `kmod-fs-ntfs` / `kmod-fs-exfat` | all-format filesystem support |
 | `e2fsprogs` | ext partition tools |
 
-### Wireless
-| Package | Notes |
-|---------|-------|
-| `kmod-mwlwifi` | mwlwifi driver (Marvell 88W8864) |
-| `mwlwifi-firmware-88w8864` | Firmware blob |
-| `iwinfo` | Wireless info utility |
-
 ---
 
-## Repository Structure
-├── .github/workflows/
+## 🔧 Build Steps
 
-│   └── image-builder.yml      # Build workflow
+### 1️⃣ Create your build repo
 
-├── packages.list              # Package list
+Top-right **Use this template → Create a new repository** under your own account.
 
-├── uci-custom                 # First-boot script → /etc/uci-defaults/99-custom
+### 2️⃣ Customize (optional)
 
-├── packages/                  # Optional: extra .ipk (must be arm_cortex-a9_neon)
-
-├── README.md
-
-└── README_EN.md
-
----
-
-## How to Build
-
-### 1. Fork This Repo
-Click **Use this template → Create a new repository**.
-
-### 2. Customize (Optional)
 | File | Purpose |
-|------|---------|
-| `packages.list` | Add/remove packages, one per line; `-pkgname` to remove defaults |
-| `uci-custom` | First-boot script (LAN IP / root password / PPPoE) |
-| `packages/` | Extra `.ipk` files (must be `arm_cortex-a9_neon`) |
+|---|---|
+| `packages.list` | add/remove packages, one per line; `-pkgname` to drop a default |
+| `uci-custom` | first-boot script (change LAN IP / main router IP / root password) |
+| `packages/` | extra `.ipk` (arch must be `arm_cortex-a9_vfpv3-d16`) |
 
-### 3. Trigger Build
-- **Actions** → **ImmortalWrt Image Builder** → **Run workflow**
-- `Target PROFILE`: defaults to `linksys_wrt1900ac-v2`
-- Wait 3–8 minutes
+### 3️⃣ Trigger build
 
-### 4. Download Firmware
-Download `linksys_wrt1900ac-v2/` from Artifacts:
+Go to **Actions → ImmortalWrt Image Builder → Run workflow**, PROFILE defaults to `linksys_wrt3200acm`, wait ~3–8 min.
+
+### 4️⃣ Download firmware
+
+In the Artifacts area download `linksys_wrt3200acm/`, which contains:
 
 | File | Use |
-|------|-----|
-| `*-squashfs-sysupgrade.bin` | Upgrade from OpenWrt / ImmortalWrt |
-| `*-squashfs-factory.img` | Flash from stock Linksys firmware |
+|---|---|
+| `*-squashfs-sysupgrade.bin` | upgrade from OpenWrt / ImmortalWrt |
+| `*-squashfs-factory.img` | flash from Linksys stock firmware |
 
 ---
 
-## Important Notes
+## 🔌 Flash & Wire
 
-- ⚠️ **PROFILE name**: 24.10.x uses `linksys_wrt1900ac-v2` (with hyphen). Old name `linksys_wrt1900acv2` will fail.
-- ⚠️ **Dual boot**: Two firmware partitions. Hold the **power button for 3 sec** on boot to switch, or use `advanced-reboot` in LuCI.
-- ⚠️ **Wireless**: mwlwifi driver — stability varies; some 5G clients may have issues.
-- ⚠️ **NTFS**: Uses kernel `ntfs3` driver (no `ntfs-3g` needed). If UAS fails on old USB enclosures, add `usb-storage.quirks`.
-- ⚠️ **Expand rootfs**: After first boot, go to LuCI → System → Partition Expansion.
+- **Wire**: WRT3200ACM **LAN port only** → main router LAN; WAN port left empty.
+- **Dual-partition protection**: hold power button 3s on boot to switch partition, or Luci → System → Advanced Reboot.
+- **First-boot automation**: `uci-custom` runs once on first boot – LAN `192.168.1.2`, gateway/DNS `192.168.1.1`, DHCP off, radio0/1 off.
 
 ---
 
-## Links
+## 📱 How clients use the bypass
 
-- [ImmortalWrt](https://immortalwrt.org/)
-- [24.10.6 mvebu/cortexa9](https://downloads.immortalwrt.org/releases/24.10.6/targets/mvebu/cortexa9/)
-- [OpenWrt Device Page](https://openwrt.org/toh/linksys/wrt1900ac_v2)
-- [Original Template](https://github.com/noviachen/Image-Builder)
+**Method A · Manual (single device)**
+
+- IP same subnet (e.g. `192.168.1.x`)
+- Gateway `192.168.1.2`
+- DNS `192.168.1.2`
+
+**Method B · Whole LAN (via main router DHCP)**
+
+- Main router DHCP "default gateway" and "DNS" both set to `192.168.1.2`
+- If stock firmware (e.g. Huawei Starlight) only allows editing DNS: set DNS `192.168.1.2` + manual gateway on terminal
+
+✅ Clients need **no proxy app** (Shadowrocket / Clash / v2rayNG etc.); traffic is captured at network layer by TUN.
 
 ---
 
-*Firmware copyright belongs to the ImmortalWrt project. This repo provides build configuration only.*
+## 🛡️ Homeproxy TUN first run
+
+Luci → Services → HomeProxy:
+
+1. **Node settings**: paste subscription, or manually add VLESS / Trojan / Hysteria2 and pick Main Node.
+2. **Client settings**:
+   - Proxy mode = **TUN** (TCP + UDP into `singtun0`)
+   - Routing: start with **Global** to test, then switch to **Bypass Mainland China**
+   - DNS: `8.8.8.8` (international), China DNS leave `223.5.5.5`
+3. Enable Homeproxy → status page shows RUNNING, node latency normal.
+
+🔥 **No manual firewall rules**: Homeproxy auto-writes fw4 include, `singtun0` is created by sing-box, bypass MASQUERADE already fixed in `uci-custom`. Luci → Status → Firewall showing `singbox` / `homeproxy` nft chains means injection works.
+
+---
+
+## 🔗 Links
+
+- [ImmortalWrt Official Site](https://www.immortalwrt.org/)
+- [ImmortalWrt 24.10.6 mvebu/cortexa9 download](https://downloads.immortalwrt.org/releases/24.10.6/targets/mvebu/cortexa9/)
+- [OpenWrt device page (WRT3200ACM)](https://openwrt.org/toh/linksys/linksys_wrt3200acm)
+
+Firmware copyright belongs to the **ImmortalWrt project**. This repo only provides build configuration.
+
+**MIT License · © bjcat119**
