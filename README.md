@@ -1,10 +1,10 @@
 [🇨🇳 中文版](README.md) | [🇺🇸 English Version](README_EN.md)
 
-# ImmortalWrt 24.10.6 for Linksys WRT1900AC v2
+# ImmortalWrt 24.10.6 for Linksys WRT3200ACM 旁路由
 
 [![ImmortalWrt](https://img.shields.io/badge/ImmortalWrt-24.10.6-brightgreen)](https://immortalwrt.org/)
 [![Target](https://img.shields.io/badge/target-mvebu%2Fcortexa9-blue)](https://downloads.immortalwrt.org/releases/24.10.6/targets/mvebu/cortexa9/)
-[![PROFILE](https://img.shields.io/badge/profile-linksys_wrt1900ac--v2-orange)](https://openwrt.org/toh/linksys/wrt1900ac_v2)
+[![PROFILE](https://img.shields.io/badge/profile-linksys_wrt3200acm-orange)](https://openwrt.org/toh/linksys/wrt3200acm)
 
 使用 GitHub Actions + ImmortalWrt Image Builder 自动构建 **Linksys WRT1900AC v2** 专用固件。
 
