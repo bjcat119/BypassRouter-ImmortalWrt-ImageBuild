@@ -201,6 +201,3 @@ BypassRouter-ImmortalWrt-ImageBuild/
 </p>
 
 
----
-
-*固件版权归 ImmortalWrt 项目所有。本仓库仅提供构建配置。*
