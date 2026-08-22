@@ -2,10 +2,10 @@
 luci-light
 luci-compat
 luci-lib-base
+luci-i18n-base-zh-cn
 luci-lib-ipkg
 luci-app-package-manager
 luci-i18n-package-manager-zh-cn
-luci-i18n-base-zh-cn
 
 # === 主题 ===
 luci-theme-argon
@@ -18,9 +18,14 @@ luci-i18n-advanced-reboot-zh-cn
 luci-app-autoreboot
 luci-i18n-autoreboot-zh-cn
 
+# === 分区扩容 ===
+luci-app-partexp
+luci-i18n-partexp-zh-cn
+
 # === 存储自动挂载 ===
 automount
 block-mount
+fstools
 
 # === USB 存储驱动 ===
 kmod-usb3
@@ -34,29 +39,33 @@ kmod-fs-ntfs3
 kmod-fs-exfat
 e2fsprogs
 
-# === 分区扩容 ===
-luci-app-partexp
-luci-i18n-partexp-zh-cn
-
-# === 网络增强（替换默认） ===
+# === 网络增强 ===
 dnsmasq-full
-wpad-openssl
-luci-ssl-openssl
 ip-full
 firewall4
 luci-i18n-firewall-zh-cn
-
-# TUN 支撑
+nftables
+netifd
+kmod-nft-core 
+kmod-nft-fib
+kmod-nft-offload
+kmod-nft-fullcone
+kmod-nf-nathelper
+kmod-nf-nathelper-extra
+kmod-nft-tproxy 
+kmod-netlink-diag
+kmod-inet-diag
+ucode-mod-fs
+ucode-mod-ubus
+ucode-mod-uci
+ucode-mod-digest
 kmod-tun
-kmod-nft-tproxy
-
-# Homeproxy + sing-box 引擎
-sing-box
-luci-app-homeproxy
-luci-i18n-homeproxy-zh-cn
 
 # === WiFi 驱动（WRT3200ACM） ===
 kmod-mwlwifi
+wpad-openssl
+kmod-btmrvl
+kmod-mwifiex-sdio
 mwlwifi-firmware-88w8964
 iwinfo
 
@@ -66,4 +75,7 @@ bash
 curl
 wget
 ca-bundle
-ca-certificates
+
+# === 删除的软件包 ===
+-ppp
+-ppp-mod-pppoe
