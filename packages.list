@@ -2,7 +2,6 @@
 luci-light
 luci-i18n-base-zh-cn
 luci-app-package-manager
-luci-i18n-patternfly-zh-cn
 
 # === 主题 ===
 luci-theme-argon
