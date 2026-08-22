@@ -1,0 +1,79 @@
+name: Build homeproxy engine ipk (mvebu/armv7)
+
+on:
+  workflow_dispatch:
+  # 也可手动触发：Actions → 此工作流 → Run workflow
+  push:
+    paths:
+      - '.github/workflows/build-homeproxy-ipk.yml'
+
+jobs:
+  build-hp:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
+    steps:
+      - name: Install build deps
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential clang flex bison gawk gettext \
+            libncurses-dev libssl-dev libelf-dev zlib1g-dev \
+            file wget unzip rsync git ca-certificates \
+            python3 python3-setuptools swig \
+            zstd bc cpio kmod
+          echo "FORCE_UNSAFE_CONFIGURE=1" >> $GITHUB_ENV
+
+      - name: Download ImmortalWrt 24.10.6 mvebu/cortexa9 SDK
+        run: |
+          cd /root
+          wget -c https://downloads.immortalwrt.org/releases/24.10.6/targets/mvebu/cortexa9/immortalwrt-sdk-24.10.6-mvebu-cortexa9_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
+          tar -I zstd -xvf *.tar.zst
+          SDK=$(ls -d immortalwrt-sdk-*)
+          mv $SDK sdk
+          echo "SDK=/root/sdk" >> $GITHUB_ENV
+
+      - name: Clone homeproxy (openwrt-24.10 branch)
+        run: |
+          cd ${{ env.SDK }}/package
+          git clone --depth 1 -b openwrt-24.10 https://github.com/immortalwrt/homeproxy.git homeproxy
+
+      - name: Feeds update + install
+        run: |
+          cd ${{ env.SDK }}
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Select packages (non-interactive)
+        run: |
+          cd ${{ env.SDK }}
+          make defconfig
+          for p in homeproxy luci-app-homeproxy luci-i18n-homeproxy-zh-cn; do
+            sed -i "s/# CONFIG_PACKAGE_${p} is not set/CONFIG_PACKAGE_${p}=y/" .config
+          done
+          # 依赖：sing-box 由官方源提供，这里不选，仅确保 HP 能被选中
+          grep -E 'homeproxy|luci-app-homeproxy' .config || true
+
+      - name: Compile homeproxy
+        run: |
+          cd ${{ env.SDK }}
+          make package/homeproxy/compile V=s -j$(nproc)
+          make package/luci-app-homeproxy/compile V=s -j$(nproc)
+
+      - name: Collect ipks
+        run: |
+          cd ${{ env.SDK }}
+          mkdir -p /root/out
+          find bin/packages -type f \( \
+            -name 'homeproxy_*.ipk' -o \
+            -name 'luci-app-homeproxy_*.ipk' -o \
+            -name 'luci-i18n-homeproxy-zh-cn_*.ipk' \
+            \) -exec cp {} /root/out/ \;
+          ls -lh /root/out/
+          echo "OUT=/root/out" >> $GITHUB_ENV
+
+      - name: Upload ipks as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: homeproxy-ipks-armv7-24.10.6
+          path: ${{ env.OUT }}/*.ipk
