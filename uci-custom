@@ -1,7 +1,12 @@
 #!/bin/sh
 #############################################
-# 0. 变量（按需修改）
+# WRT3200ACM 旁路由首启脚本
+# ImmortalWrt 24.10.6 / mvebu-cortexa9
+# 同网段旁路: LAN 192.168.1.2 / 网关 192.168.1.1
+# 关 DHCP / 关无线 / 禁 IPv6 / HP TUN 透明代理
 #############################################
+
+### 0. 变量（按需修改）
 LAN_IP="192.168.1.2"
 MAIN_GW="192.168.1.1"
 HOSTNAME="WRT3200ACM"
@@ -10,7 +15,7 @@ NTP2="ntp.tencent.com"
 DNS1="223.5.5.5"
 DNS2="119.29.29.29"
 
-#  1. 主机名 / 时区 / NTP ==="
+echo "=== 1. 主机名 / 时区 / NTP / root 密码 ==="
 uci set system.@system[0].hostname="$HOSTNAME"
 uci set system.@system[0].zonename='Asia/Shanghai'
 uci set system.@system[0].timezone='CST-8'
@@ -19,11 +24,12 @@ uci add_list system.ntp.server="$NTP1"
 uci add_list system.ntp.server="$NTP2"
 uci set system.ntp.enabled='1'
 uci set system.ntp.enable_server='0'
-# root 密码（chpasswd 在 uci-defaults 里比 passwd here-string 可靠）
-echo 'root:SoftOEM@76' | chpasswd -c SHA512
+
+# root 密码（busybox passwd 支持 --stdin；不支持时回退 chpasswd）
+echo 'SoftOEM@76' | passwd root --stdin 2>/dev/null || echo 'root:SoftOEM@76' | chpasswd
 uci commit system
 
-#  2. LAN 静态化 + 网关 + DNS ==="
+echo "=== 2. LAN 静态化 + 网关 + DNS + 禁 IPv6 委派 ==="
 uci set network.lan.proto='static'
 uci set network.lan.ipaddr="$LAN_IP"
 uci set network.lan.netmask='255.255.255.0'
@@ -36,7 +42,7 @@ uci -q delete network.lan.ip6hint
 uci set network.lan.delegate='0'
 uci commit network
 
-#  3. DHCP 关闭 + IPv6 彻底禁用 ==="
+echo "=== 3. DHCP 关闭 + IPv6 彻底禁用 + 停 odhcpd ==="
 uci set dhcp.lan.ignore='1'
 uci set dhcp.lan.dhcpv6='disabled'
 uci set dhcp.lan.ra='disabled'
@@ -49,6 +55,11 @@ uci set dhcp.@dnsmasq[0].dhcp_boot=''
 uci set dhcp.@dnsmasq[0].filter_aaaa='1'
 uci commit dhcp
 
+# 立刻停掉 odhcpd（IPv6 RA/DHCPv6 守护）
+/etc/init.d/odhcpd stop
+/etc/init.d/odhcpd disable
+rm -f /etc/rc.d/S*odhcpd
+
 # 内核级禁 IPv6
 cat > /etc/sysctl.d/99-disable-ipv6.conf << 'EOF'
 net.ipv6.conf.all.disable_ipv6 = 1
@@ -58,13 +69,12 @@ net.ipv6.conf.br-lan.disable_ipv6 = 1
 EOF
 sysctl -p /etc/sysctl.d/99-disable-ipv6.conf 2>/dev/null || true
 
-#  4. 禁用无线 ==="
-for i in 0 1; do
-    uci set wireless.radio${i}.disabled='1'
-done
+echo "=== 4. 禁用无线 (WRT3200ACM 只有 radio0/1) ==="
+uci set wireless.radio0.disabled='1'
+uci set wireless.radio1.disabled='1'
 uci commit wireless
 
-#  5. 防火墙：保留 WAN zone 做 MASQUERADE ==="
+echo "=== 5. 防火墙: LAN 不MASQ / WAN 绑 lo 做 TUN 兜底 MASQ ==="
 # LAN zone
 uci set firewall.@zone[0].name='lan'
 uci -q delete firewall.@zone[0].network
@@ -75,16 +85,17 @@ uci set firewall.@zone[0].forward='ACCEPT'
 uci set firewall.@zone[0].masq='0'
 uci set firewall.@zone[0].mtu_fix='1'
 
-# WAN zone 绑 lo，开 MASQUERADE（HP TUN 回程需要）
+# WAN zone 保留绑 lo，开 MASQUERADE（sing-box TUN 回程兜底）
 uci set firewall.@zone[1].name='wan'
-uci set firewall.@zone[1].network='lo'
+uci -q delete firewall.@zone[1].network
+uci add_list firewall.@zone[1].network='lo'
 uci set firewall.@zone[1].input='ACCEPT'
 uci set firewall.@zone[1].output='ACCEPT'
 uci set firewall.@zone[1].forward='ACCEPT'
 uci set firewall.@zone[1].masq='1'
 uci set firewall.@zone[1].mtu_fix='1'
 
-# 全局
+# 全局默认全放行（旁路由场景）
 uci set firewall.@defaults[0].input='ACCEPT'
 uci set firewall.@defaults[0].output='ACCEPT'
 uci set firewall.@defaults[0].forward='ACCEPT'
@@ -94,26 +105,28 @@ uci set firewall.@defaults[0].synflood_protect='0'
 uci set firewall.@defaults[0].flow_offloading='0'
 uci set firewall.@defaults[0].fullcone='0'
 
+# 删默认 LAN->WAN forwarding（旁路由不需要）
 uci -q delete firewall.@forwarding[0]
 uci commit firewall
 
-#  6. uHTTPd 监听 ==="
+echo "=== 6. uHTTPd 监听所有 IPv4 接口 ==="
 uci set uhttpd.main.listen_http='0.0.0.0:80'
 uci set uhttpd.main.listen_https='0.0.0.0:443'
 uci set uhttpd.main.cert='/etc/uhttpd.crt'
 uci set uhttpd.main.key='/etc/uhttpd.key'
 uci commit uhttpd
 
-#  7. Luci 中文 + Argon ==="
+echo "=== 7. Luci 中文 + Argon 主题 ==="
 uci set luci.main.lang='zh_cn'
 uci set luci.main.mediaurlbase='/luci-static/argon'
 uci commit luci
 
-#  8. 停 odhcpd 
-/etc/init.d/odhcpd stop
-/etc/init.d/odhcpd disable
+echo "=== 8. TUN 模块保险 ==="
+if ! lsmod | grep -q "^tun "; then
+    modprobe tun 2>/dev/null || opkg install kmod-tun 2>/dev/null
+fi
 
-#  9. 重启服务 
+echo "=== 9. 重启服务 ==="
 uci commit
 /etc/init.d/system reload
 /etc/init.d/network restart
@@ -122,7 +135,16 @@ fw4 reload
 wifi reload
 /etc/init.d/uhttpd restart
 
-#  10.自删
+echo "=============================================="
+echo "WRT3200ACM 旁路由配置完成"
+echo "  管理地址 : http://$LAN_IP"
+echo "  主机名   : $HOSTNAME"
+echo "  IPv6     : 内核级禁用 + odhcpd 已停"
+echo "  无线     : 已关闭"
+echo "  TUN      : kmod-tun 已确认"
+echo "=============================================="
+
+# 自删（若文件实际名为 99-pangateway，改下面这一行）
 rm -f /etc/uci-defaults/99-custom
 
 exit 0
