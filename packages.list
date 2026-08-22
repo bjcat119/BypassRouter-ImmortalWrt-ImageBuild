@@ -51,9 +51,9 @@ kmod-tun
 kmod-nft-tproxy
 
 # Homeproxy + sing-box 引擎
+sing-box
 luci-app-homeproxy
 luci-i18n-homeproxy-zh-cn
-sing-box
 
 # === WiFi 驱动（WRT3200ACM） ===
 kmod-mwlwifi
