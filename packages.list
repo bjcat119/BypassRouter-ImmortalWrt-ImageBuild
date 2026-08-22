@@ -4,9 +4,8 @@ luci-compat
 luci-lib-base
 luci-lib-ipkg
 luci-app-package-manager
-luci-i18n-base-zh-cn
-luci-i18n-firewall-zh-cn
 luci-i18n-package-manager-zh-cn
+luci-i18n-base-zh-cn
 
 # === 主题 ===
 luci-theme-argon
@@ -18,14 +17,6 @@ luci-i18n-advanced-reboot-zh-cn
 # === 定时重启 ===
 luci-app-autoreboot
 luci-i18n-autoreboot-zh-cn
-
-# === UPnP ===
-luci-app-upnp
-luci-i18n-upnp-zh-cn
-
-# === 分区扩容 ===
-luci-app-partexp
-luci-i18n-partexp-zh-cn
 
 # === 存储自动挂载 ===
 automount
@@ -43,14 +34,31 @@ kmod-fs-ntfs3
 kmod-fs-exfat
 e2fsprogs
 
+# === 分区扩容 ===
+luci-app-partexp
+luci-i18n-partexp-zh-cn
+
 # === 网络增强（替换默认） ===
 dnsmasq-full
 wpad-openssl
+luci-ssl-openssl
 ip-full
+firewall4
+luci-i18n-firewall-zh-cn
 
-# === WiFi 驱动（WRT1900AC v2） ===
+# TUN 支撑
+kmod-tun
+kmod-nft-tproxy
+
+# Homeproxy + sing-box 引擎
+luci-app-homeproxy
+luci-i18n-homeproxy-zh-cn
+homeproxy
+sing-box
+
+# === WiFi 驱动（WRT3200ACM） ===
 kmod-mwlwifi
-mwlwifi-firmware-88w8864
+mwlwifi-firmware-88w8964
 
 # === 系统工具 ===
 autocore
