@@ -1,4 +1,4 @@
-name: Build homeproxy engine ipk (mvebu/armv7)
+name: Build Homeproxy Engine (mvebu/armv7)
 
 on:
   workflow_dispatch:
@@ -30,7 +30,6 @@ jobs:
           URL="https://downloads.immortalwrt.org/releases/24.10.6/targets/mvebu/cortexa9/immortalwrt-sdk-24.10.6-mvebu-cortexa9_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst"
           wget -c "$URL" -O sdk.tar.zst
           file sdk.tar.zst
-          # 解到临时目录，避免通配 mv 踩空
           rm -rf sdk_src sdk
           mkdir -p sdk_src
           tar -I zstd -xvf sdk.tar.zst -C sdk_src
@@ -42,11 +41,11 @@ jobs:
           ls -d /root/sdk
           echo "SDK=/root/sdk" >> $GITHUB_ENV
 
-      - name: Clone homeproxy (openwrt-24.10 branch)
+      - name: Clone homeproxy (master)
         run: |
           cd ${{ env.SDK }}/package
           rm -rf homeproxy
-          git clone --depth 1 -b openwrt-24.10 https://github.com/immortalwrt/homeproxy.git homeproxy
+          git clone --depth 1 https://github.com/immortalwrt/homeproxy.git homeproxy
 
       - name: Feeds update + install
         run: |
