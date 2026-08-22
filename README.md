@@ -22,7 +22,7 @@
 - 🔌 **开机即用旁路由**：`uci-custom` 首启脚本自动固化 LAN IP、关 DHCP/无线、配防火墙，无需刷后手动改配置。
 - 🌐 **Homeproxy + sing-box TUN**：Luci 可视化配置，TCP/UDP 全接管，Gemini / Claude / Copilot 透明代理。
 - 🛡️ **双分区救砖**：预装 `luci-app-advanced-reboot`，刷坏一键切分区，WRT3200ACM 双 UBI 分区更安全。
-- 💽 **USB 存储全格式**：`block-mount` + `blockd` + ext4/vfat/ntfs/exfat，U 盘即插即用。
+- 💽 **USB 存储全格式**： ext4/vfat/ntfs/exfat，U 盘即插即用。
 - 🎨 **Argon 主题 + 中文**：`luci-theme-argon` + 全套 `luci-i18n-*-zh-cn`，后台体验友好。
 - ⚙️ **GitHub Actions 自动构建**：Fork / Use this template 后一键出 `sysupgrade.bin` + `factory.img`。
 
