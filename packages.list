@@ -1,81 +1,66 @@
 # === LUCI 核心 ===
 luci-light
-luci-compat
-luci-lib-base
 luci-i18n-base-zh-cn
-luci-lib-ipkg
 luci-app-package-manager
-luci-i18n-package-manager-zh-cn
+luci-i18n-patternfly-zh-cn
 
 # === 主题 ===
 luci-theme-argon
 
-# === 双分区管理 ===
+# === 双分区 / 管理 ===
 luci-app-advanced-reboot
 luci-i18n-advanced-reboot-zh-cn
-
-# === 定时重启 ===
 luci-app-autoreboot
 luci-i18n-autoreboot-zh-cn
-
-# === 分区扩容 ===
 luci-app-partexp
 luci-i18n-partexp-zh-cn
 
-# === 存储自动挂载 ===
-automount
+# === Homeproxy TUN（关键）===
+luci-app-homeproxy
+luci-i18n-homeproxy-zh-cn
+sing-box
+kmod-tun
+kmod-nft-tproxy
+
+# === 存储 ===
 block-mount
+blockd
 fstools
 
-# === USB 存储驱动 ===
+# === USB ===
 kmod-usb3
 kmod-usb-storage
 kmod-usb-storage-uas
 
-# === 文件系统模块 ===
+# === 文件系统 ===
 kmod-fs-ext4
 kmod-fs-vfat
-kmod-fs-ntfs3
+kmod-fs-ntfs
 kmod-fs-exfat
 e2fsprogs
 
-# === 网络增强 ===
+# === 一键分区扩容 ===
+luci-app-partexp
+luci-i18n-partexp-zh-cn
+
+# === 网络核心（替换默认）===
 dnsmasq-full
 ip-full
 firewall4
 luci-i18n-firewall-zh-cn
-nftables
-netifd
-kmod-nft-core 
-kmod-nft-fib
-kmod-nft-offload
-kmod-nft-fullcone
-kmod-nf-nathelper
-kmod-nf-nathelper-extra
-kmod-nft-tproxy 
-kmod-netlink-diag
-kmod-inet-diag
-ucode-mod-fs
-ucode-mod-ubus
-ucode-mod-uci
-ucode-mod-digest
-kmod-tun
 
-# === WiFi 驱动（WRT3200ACM） ===
+# === WiFi WRT3200ACM ===
 kmod-mwlwifi
-wpad-openssl
-kmod-btmrvl
-kmod-mwifiex-sdio
 mwlwifi-firmware-88w8964
+wpad-openssl
 iwinfo
 
-# === 系统工具 ===
+# === 系统小工具 ===
 autocore
-bash
 curl
 wget
 ca-bundle
 
-# === 删除的软件包 ===
+# === 剔除默认包 ===
 -ppp
 -ppp-mod-pppoe
