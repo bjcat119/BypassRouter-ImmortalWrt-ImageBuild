@@ -30,7 +30,7 @@ kmod-usb-storage-uas
 # === 文件系统模块 ===
 kmod-fs-ext4
 kmod-fs-vfat
-kmod-fs-ntfs
+kmod-fs-ntfs3
 kmod-fs-exfat
 e2fsprogs
 
