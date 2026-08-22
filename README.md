@@ -118,7 +118,7 @@ BypassRouter-ImmortalWrt-ImageBuild/
 
 ### 3️⃣ 触发构建
 
-进入 **Actions → ImmortalWrt Image Builder → Run workflow**，PROFILE 默认 `linksys_wrt3200acm`，等待约 3–8 分钟。
+进入 **Actions → BypassRouter ImmortalWrt Image Builder → Run workflow**，PROFILE 默认 `linksys_wrt3200acm`，等待约 3–8 分钟。
 
 ### 4️⃣ 下载固件
 
