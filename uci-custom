@@ -1,73 +1,128 @@
 #!/bin/sh
-# 旁路由首启配置：WRT3200ACM + ImmortalWrt 24.10.6
-# 主路由 192.168.1.1，本机 192.168.1.2
+#############################################
+# 0. 变量（按需修改）
+#############################################
+LAN_IP="192.168.1.2"
+MAIN_GW="192.168.1.1"
+HOSTNAME="WRT3200ACM"
+NTP1="ntp.aliyun.com"
+NTP2="ntp.tencent.com"
+DNS1="223.5.5.5"
+DNS2="119.29.29.29"
 
-# 0. 系统基础设置
-uci set system.@system[0].hostname='WRT3200ACM'
-uci set system.@system[0].timezone='CST-8'
+#  1. 主机名 / 时区 / NTP ==="
+uci set system.@system[0].hostname="$HOSTNAME"
 uci set system.@system[0].zonename='Asia/Shanghai'
-uci commit system
-
+uci set system.@system[0].timezone='CST-8'
+uci -q delete system.ntp.server
+uci add_list system.ntp.server="$NTP1"
+uci add_list system.ntp.server="$NTP2"
+uci set system.ntp.enabled='1'
+uci set system.ntp.enable_server='0'
 # root 密码（chpasswd 在 uci-defaults 里比 passwd here-string 可靠）
 echo 'root:SoftOEM@76' | chpasswd -c SHA512
+uci commit system
 
-uci set luci.main.lang='zh-cn'
+#  2. LAN 静态化 + 网关 + DNS ==="
+uci set network.lan.proto='static'
+uci set network.lan.ipaddr="$LAN_IP"
+uci set network.lan.netmask='255.255.255.0'
+uci set network.lan.gateway="$MAIN_GW"
+uci -q delete network.lan.dns
+uci add_list network.lan.dns="$DNS1"
+uci add_list network.lan.dns="$DNS2"
+uci -q delete network.lan.ip6assign
+uci -q delete network.lan.ip6hint
+uci set network.lan.delegate='0'
+uci commit network
+
+#  3. DHCP 关闭 + IPv6 彻底禁用 ==="
+uci set dhcp.lan.ignore='1'
+uci set dhcp.lan.dhcpv6='disabled'
+uci set dhcp.lan.ra='disabled'
+uci -q delete dhcp.lan.start
+uci -q delete dhcp.lan.limit
+uci -q delete dhcp.lan.leasetime
+uci set dhcp.@dnsmasq[0].enable_tftp='0'
+uci -q delete dhcp.@dnsmasq[0].tftp_root
+uci set dhcp.@dnsmasq[0].dhcp_boot=''
+uci set dhcp.@dnsmasq[0].filter_aaaa='1'
+uci commit dhcp
+
+# 内核级禁 IPv6
+cat > /etc/sysctl.d/99-disable-ipv6.conf << 'EOF'
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+net.ipv6.conf.br-lan.disable_ipv6 = 1
+EOF
+sysctl -p /etc/sysctl.d/99-disable-ipv6.conf 2>/dev/null || true
+
+#  4. 禁用无线 ==="
+for i in 0 1; do
+    uci set wireless.radio${i}.disabled='1'
+done
+uci commit wireless
+
+#  5. 防火墙：保留 WAN zone 做 MASQUERADE ==="
+# LAN zone
+uci set firewall.@zone[0].name='lan'
+uci -q delete firewall.@zone[0].network
+uci add_list firewall.@zone[0].network='lan'
+uci set firewall.@zone[0].input='ACCEPT'
+uci set firewall.@zone[0].output='ACCEPT'
+uci set firewall.@zone[0].forward='ACCEPT'
+uci set firewall.@zone[0].masq='0'
+uci set firewall.@zone[0].mtu_fix='1'
+
+# WAN zone 绑 lo，开 MASQUERADE（HP TUN 回程需要）
+uci set firewall.@zone[1].name='wan'
+uci set firewall.@zone[1].network='lo'
+uci set firewall.@zone[1].input='ACCEPT'
+uci set firewall.@zone[1].output='ACCEPT'
+uci set firewall.@zone[1].forward='ACCEPT'
+uci set firewall.@zone[1].masq='1'
+uci set firewall.@zone[1].mtu_fix='1'
+
+# 全局
+uci set firewall.@defaults[0].input='ACCEPT'
+uci set firewall.@defaults[0].output='ACCEPT'
+uci set firewall.@defaults[0].forward='ACCEPT'
+uci set firewall.@defaults[0].drop_invalid='0'
+uci set firewall.@defaults[0].syn_flood='0'
+uci set firewall.@defaults[0].synflood_protect='0'
+uci set firewall.@defaults[0].flow_offloading='0'
+uci set firewall.@defaults[0].fullcone='0'
+
+uci -q delete firewall.@forwarding[0]
+uci commit firewall
+
+#  6. uHTTPd 监听 ==="
+uci set uhttpd.main.listen_http='0.0.0.0:80'
+uci set uhttpd.main.listen_https='0.0.0.0:443'
+uci set uhttpd.main.cert='/etc/uhttpd.crt'
+uci set uhttpd.main.key='/etc/uhttpd.key'
+uci commit uhttpd
+
+#  7. Luci 中文 + Argon ==="
+uci set luci.main.lang='zh_cn'
 uci set luci.main.mediaurlbase='/luci-static/argon'
 uci commit luci
 
-uci delete system.ntp.server 2>/dev/null
-uci add_list system.ntp.server='ntp.aliyun.com'
-uci add_list system.ntp.server='time1.cloud.tencent.com'
-uci add_list system.ntp.server='time2.cloud.tencent.com'
-uci set system.ntp.enabled='1'
-uci set system.ntp.enable_server='0'
-uci commit system
+#  8. 停 odhcpd 
+/etc/init.d/odhcpd stop
+/etc/init.d/odhcpd disable
 
-# 1. LAN 静态化
-uci set network.lan.proto='static'
-uci set network.lan.ipaddr='192.168.1.2'
-uci set network.lan.netmask='255.255.255.0'
-uci set network.lan.gateway='192.168.1.1'
-uci set network.lan.dns='192.168.1.1'
-uci delete network.lan.ip6assign 2>/dev/null
-uci commit network
+#  9. 重启服务 
+uci commit
+/etc/init.d/system reload
+/etc/init.d/network restart
+/etc/init.d/dnsmasq restart
+fw4 reload
+wifi reload
+/etc/init.d/uhttpd restart
 
-# 2. 关 LAN 侧 DHCP（主路由发地址）
-uci set dhcp.lan.ignore='1'
-uci commit dhcp
-
-# 3. 关无线（不广播 SSID）
-for w in $(uci show wireless | awk -F'[.=]' '/\.disabled=/{print $2}'); do
-  uci set wireless.$w.disabled='1'
-done
-# 兜底：把 radio0/radio1 也显式关
-uci set wireless.radio0.disabled='1' 2>/dev/null
-uci set wireless.radio1.disabled='1' 2>/dev/null
-uci commit wireless
-
-# 4. 防火墙：LAN->WAN 全放行 + MASQUERADE（旁路由经典配置）
-uci set firewall.@zone[0].forward='ACCEPT'   # lan zone
-uci set firewall.@zone[0].input='ACCEPT'
-uci set firewall.@zone[0].output='ACCEPT'
-uci set firewall.@zone[1].masq='1'           # wan zone masquerade
-uci commit firewall
-
-# 5. LAN 放行 SSH（SCP 也走 22）/ dropbear 显式配置
-uci set dropbear.@dropbear[0].enable='1'
-uci set dropbear.@dropbear[0].Port='22'
-uci set dropbear.@dropbear[0].PasswordAuth='on'
-uci set dropbear.@dropbear[0].RootPasswordAuth='on'
-uci set dropbear.@dropbear[0].Interface='lan'
-uci commit dropbear
-
-# 6. 可选：强制 LAN 口不走 WAN（3200ACM 多口，把 wan 口空着就行，不动也行）
-
-# 7. 重启服务
-service network restart
-service dnsmasq restart
-service firewall restart
-
-# 8.自删
+#  10.自删
 rm -f /etc/uci-defaults/99-custom
 
 exit 0
