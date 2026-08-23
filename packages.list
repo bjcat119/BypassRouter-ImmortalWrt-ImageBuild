@@ -1,29 +1,22 @@
-# === LUCI 核心 ===
-luci-light
-luci-compat
-luci-lib-base
+# === LUCI 核心（拆开装，避免 luci 元包拉回 ppp/ipv6 proto）===
+luci-base
+luci-i18n-base-zh-cn
 luci-lib-ipkg
 luci-app-package-manager
-luci-i18n-base-zh-cn
 luci-i18n-package-manager-zh-cn
+luci-app-firewall
+luci-i18n-firewall-zh-cn
 
-# === 主题 ===
-luci-theme-argon
+# === 网络核心（替换默认）===
+dnsmasq-full
+ip-full
+firewall4
 
-# === 双分区管理 ===
-luci-app-advanced-reboot
-luci-i18n-advanced-reboot-zh-cn
-
-# === 定时重启 ===
-luci-app-autoreboot
-luci-i18n-autoreboot-zh-cn
-
-# === Homeproxy TUN（关键）===
-luci-app-homeproxy
-luci-i18n-homeproxy-zh-cn
-sing-box
-kmod-tun
-kmod-nft-tproxy
+# === WiFi WRT3200ACM ===
+kmod-mwlwifi
+mwlwifi-firmware-88w8964
+wpad-openssl
+iwinfo
 
 # === 存储自动挂载 ===
 automount
@@ -42,28 +35,40 @@ kmod-fs-ntfs
 kmod-fs-exfat
 e2fsprogs
 
-# === 一键分区扩容 ===
-luci-app-partexp
-luci-i18n-partexp-zh-cn
-
-# === 网络核心（替换默认）===
-dnsmasq-full
-ip-full
-firewall4
-luci-i18n-firewall-zh-cn
-
-# === WiFi WRT3200ACM ===
-kmod-mwlwifi
-mwlwifi-firmware-88w8964
-wpad-openssl
-iwinfo
-
-# === 系统小工具 ===
+# === 系统工具 ===
 autocore
 curl
 wget
 ca-bundle
 
-# === 剔除默认包 ===
+# === 主题 ===
+luci-theme-argon
+
+# === Homeproxy + Sing-Box + TUN TCP/UDP模式（关键）===
+luci-app-homeproxy
+luci-i18n-homeproxy-zh-cn
+sing-box
+kmod-tun
+kmod-nft-tproxy
+
+# === 双分区管理 ===
+luci-app-advanced-reboot
+luci-i18n-advanced-reboot-zh-cn
+
+# === 定时重启 ===
+luci-app-autoreboot
+luci-i18n-autoreboot-zh-cn
+
+# === 一键分区扩容 ===
+luci-app-partexp
+luci-i18n-partexp-zh-cn
+
+# === 剔除默认包（PPPoE + IPv6 客户端 + 用不到的 proto）===
 -ppp
 -ppp-mod-pppoe
+-kmod-ppp
+-kmod-pppoe
+-kmod-pppox
+-luci-proto-ppp
+-odhcp6c
+-luci-proto-ipv6
