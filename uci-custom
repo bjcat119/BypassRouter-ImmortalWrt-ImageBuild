@@ -24,8 +24,6 @@ uci add_list system.ntp.server="$NTP1"
 uci add_list system.ntp.server="$NTP2"
 uci set system.ntp.enabled='1'
 uci set system.ntp.enable_server='0'
-
-# root 密码（busybox passwd 支持 --stdin；不支持时回退 chpasswd）
 echo 'SoftOEM@76' | passwd root --stdin 2>/dev/null || echo 'root:SoftOEM@76' | chpasswd
 uci commit system
 
@@ -54,28 +52,27 @@ uci -q delete dhcp.@dnsmasq[0].tftp_root
 uci set dhcp.@dnsmasq[0].dhcp_boot=''
 uci set dhcp.@dnsmasq[0].filter_aaaa='1'
 uci commit dhcp
-
-# 立刻停掉 odhcpd（IPv6 RA/DHCPv6 守护）
 /etc/init.d/odhcpd stop
 /etc/init.d/odhcpd disable
 rm -f /etc/rc.d/S*odhcpd
 
-# 内核级禁 IPv6
+echo "=== 4. IPv6 策略：只禁 LAN 口，保留协议栈给 TUN ==="
 cat > /etc/sysctl.d/99-disable-ipv6.conf << 'EOF'
-net.ipv6.conf.all.disable_ipv6 = 1
-net.ipv6.conf.default.disable_ipv6 = 1
-net.ipv6.conf.lo.disable_ipv6 = 1
 net.ipv6.conf.br-lan.disable_ipv6 = 1
+net.ipv6.conf.eth0.disable_ipv6 = 1
+net.ipv6.conf.eth0.1.disable_ipv6 = 1
+net.ipv6.conf.all.disable_ipv6 = 0
+net.ipv6.conf.default.disable_ipv6 = 0
+net.ipv6.conf.lo.disable_ipv6 = 0
 EOF
 sysctl -p /etc/sysctl.d/99-disable-ipv6.conf 2>/dev/null || true
 
-echo "=== 4. 禁用无线 (WRT3200ACM 只有 radio0/1) ==="
+echo "=== 5. 禁用无线 ==="
 uci set wireless.radio0.disabled='1'
 uci set wireless.radio1.disabled='1'
 uci commit wireless
 
-echo "=== 5. 防火墙: LAN 不MASQ / WAN 绑 lo 做 TUN 兜底 MASQ ==="
-# LAN zone
+echo "=== 6. 防火墙: LAN 不MASQ / WAN 绑 lo ==="
 uci set firewall.@zone[0].name='lan'
 uci -q delete firewall.@zone[0].network
 uci add_list firewall.@zone[0].network='lan'
@@ -84,8 +81,6 @@ uci set firewall.@zone[0].output='ACCEPT'
 uci set firewall.@zone[0].forward='ACCEPT'
 uci set firewall.@zone[0].masq='0'
 uci set firewall.@zone[0].mtu_fix='1'
-
-# WAN zone 保留绑 lo，开 MASQUERADE（sing-box TUN 回程兜底）
 uci set firewall.@zone[1].name='wan'
 uci -q delete firewall.@zone[1].network
 uci add_list firewall.@zone[1].network='lo'
@@ -94,8 +89,6 @@ uci set firewall.@zone[1].output='ACCEPT'
 uci set firewall.@zone[1].forward='ACCEPT'
 uci set firewall.@zone[1].masq='1'
 uci set firewall.@zone[1].mtu_fix='1'
-
-# 全局默认全放行（旁路由场景）
 uci set firewall.@defaults[0].input='ACCEPT'
 uci set firewall.@defaults[0].output='ACCEPT'
 uci set firewall.@defaults[0].forward='ACCEPT'
@@ -104,29 +97,55 @@ uci set firewall.@defaults[0].syn_flood='0'
 uci set firewall.@defaults[0].synflood_protect='0'
 uci set firewall.@defaults[0].flow_offloading='0'
 uci set firewall.@defaults[0].fullcone='0'
-
-# 删默认 LAN->WAN forwarding（旁路由不需要）
 uci -q delete firewall.@forwarding[0]
 uci commit firewall
 
-echo "=== 6. uHTTPd 监听所有 IPv4 接口 ==="
+echo "=== 7. uHTTPd + Luci ==="
 uci set uhttpd.main.listen_http='0.0.0.0:80'
 uci set uhttpd.main.listen_https='0.0.0.0:443'
 uci set uhttpd.main.cert='/etc/uhttpd.crt'
 uci set uhttpd.main.key='/etc/uhttpd.key'
-uci commit uhttpd
-
-echo "=== 7. Luci 中文 + Argon 主题 ==="
 uci set luci.main.lang='zh_cn'
 uci set luci.main.mediaurlbase='/luci-static/argon'
+uci commit uhttpd
 uci commit luci
 
-echo "=== 8. TUN 模块保险 ==="
+echo "=== 8. ujail capabilities: TUN 需要 CAP_NET_ADMIN ==="
+mkdir -p /etc/capabilities
+cat > /etc/capabilities/sing-box-c.json << 'EOF'
+{
+  "bounding": [
+    "CAP_NET_ADMIN",
+    "CAP_NET_BIND_SERVICE",
+    "CAP_NET_RAW",
+    "CAP_SYS_ADMIN"
+  ],
+  "effective": [
+    "CAP_NET_ADMIN",
+    "CAP_NET_BIND_SERVICE",
+    "CAP_NET_RAW",
+    "CAP_SYS_ADMIN"
+  ],
+  "permitted": [
+    "CAP_NET_ADMIN",
+    "CAP_NET_BIND_SERVICE",
+    "CAP_NET_RAW",
+    "CAP_SYS_ADMIN"
+  ]
+}
+EOF
+
+echo "=== 9. Homeproxy: 启用 TUN 模式 + MTU 1400 ==="
+uci set homeproxy.config.proxy_mode='tun'
+uci set homeproxy.infra.tun_mtu='1400'
+uci commit homeproxy
+
+echo "=== 10. TUN 模块保险 ==="
 if ! lsmod | grep -q "^tun "; then
     modprobe tun 2>/dev/null || opkg install kmod-tun 2>/dev/null
 fi
 
-echo "=== 9. 重启服务 ==="
+echo "=== 11. 重启服务 ==="
 uci commit
 /etc/init.d/system reload
 /etc/init.d/network restart
@@ -139,12 +158,11 @@ echo "=============================================="
 echo "WRT3200ACM 旁路由配置完成"
 echo "  管理地址 : http://$LAN_IP"
 echo "  主机名   : $HOSTNAME"
-echo "  IPv6     : 内核级禁用 + odhcpd 已停"
+echo "  IPv6     : LAN 口禁用 + odhcpd 已停"
 echo "  无线     : 已关闭"
-echo "  TUN      : kmod-tun 已确认"
+echo "  HP       : TUN 模式 + MTU 1400"
+echo "  TUN      : CAP_NET_ADMIN + kmod-tun 已确认"
 echo "=============================================="
 
-# 自删（若文件实际名为 99-pangateway，改下面这一行）
 rm -f /etc/uci-defaults/99-custom
-
 exit 0
