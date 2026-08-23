@@ -1,14 +1,20 @@
 # === LUCI 核心 ===
 luci-light
-luci-i18n-base-zh-cn
+luci-compat
+luci-lib-base
+luci-lib-ipkg
 luci-app-package-manager
+luci-i18n-base-zh-cn
+luci-i18n-package-manager-zh-cn
 
 # === 主题 ===
 luci-theme-argon
 
-# === 双分区 / 管理 ===
+# === 双分区管理 ===
 luci-app-advanced-reboot
 luci-i18n-advanced-reboot-zh-cn
+
+# === 定时重启 ===
 luci-app-autoreboot
 luci-i18n-autoreboot-zh-cn
 
@@ -19,12 +25,12 @@ sing-box
 kmod-tun
 kmod-nft-tproxy
 
-# === 存储 ===
+# === 存储自动挂载 ===
+automount
 block-mount
-blockd
 fstools
 
-# === USB ===
+# === USB 存储驱动 ===
 kmod-usb3
 kmod-usb-storage
 kmod-usb-storage-uas
