@@ -135,9 +135,10 @@ cat > /etc/capabilities/sing-box-c.json << 'EOF'
 }
 EOF
 
-echo "=== 9. Homeproxy: 启用 TUN 模式 + MTU 1400 ==="
+echo "=== 9. Homeproxy: TUN 模式 + 关 IPv6 支持 + MTU 1400 ==="
 uci set homeproxy.config.proxy_mode='tun'
-uci set homeproxy.infra.tun_mtu='1400'
+uci set homeproxy.config.ipv6_support='0'
+ucz set homeproxy.infra.tun_mtu='1400'
 uci commit homeproxy
 
 echo "=== 10. TUN 模块保险 ==="
